@@ -16,7 +16,7 @@ typedef struct{
     	uint32_t SampleRate;
     	uint32_t ByteRate;
 		uint16_t BlockAlign;
-		uint16_t BytesPerSample;
+		uint16_t BitsPerSample;
 }cabecalho_t;
 
 typedef struct{
@@ -138,7 +138,7 @@ int main(){
 
     nl(1);
 
-    printf(" bits per sample: %d", wavCab.BytesPerSample);
+    printf(" bits per sample: %d", wavCab.BitsPerSample);
 
     nl(2);
 
@@ -148,7 +148,7 @@ int main(){
     int segundosComeco = 2;
     int segundosDuracao = 2;
 
-    int numBytesPular = (int)((double)(segundosComeco*wavCab.BytesPerSample)/((double)16*pow((double)10, (double)-6)));
+    int numBytesPular = (int)((double)(segundosComeco*(wavCab.BitsPerSample/8))/((double)16*pow((double)10, (double)-6)));
     int numSamplesLer = (int)((double)(segundosDuracao)/((double)16*pow((double)10, (double)-6)));
 
     fseek(fpRd, numBytesPular, SEEK_CUR);
