@@ -56,8 +56,10 @@ void p4 (char *str){
 int main(){
 
     FILE *fpRd, *fpWt;
-    char nome[300], cut[]={"cut_"};
+    char nome[300], cut[300];
     int i;
+
+    strcpy(cut, "cut_");
 
     cabecalho_t wavCab;
     wave_t wavDat;
@@ -68,7 +70,7 @@ int main(){
     do{
 
 		printf(" escreva o nome do arquivo que desja abrir: ");
-		scanf(" %s", &nome);
+		scanf("%s", &nome);
 
 		nl(1);
 
@@ -143,7 +145,6 @@ int main(){
     nl(2);
 
     fwrite ((void *)&wavCab, sizeof(wavCab), 1, fpWt);
-    fwrite ((void *)&wavDat, sizeof(wavDat), 1, fpWt);
 
     int segundosComeco = 2;
     int segundosDuracao = 2;
@@ -151,11 +152,15 @@ int main(){
     int numBytesPular = (int)((double)(segundosComeco*(wavCab.BitsPerSample/8))/((double)16*pow((double)10, (double)-6)));
     int numSamplesLer = (int)((double)(segundosDuracao)/((double)16*pow((double)10, (double)-6)));
 
+    wavDat.SubChunk2Size = numSamplesLer * (wavCab.BitsPerSample/8);
+
+    fwrite((void *)&wavDat, sizeof(wavDat), 1, fpWt);
+
     fseek(fpRd, numBytesPular, SEEK_CUR);
 
 	for(i=0; i<numSamplesLer; i++){
 		fread ((void *)&data, sizeof(int16_t), 1, fpRd);
-			data = data/volume;
+        data = data/volume;
 		fwrite ((void *)&data, sizeof(int16_t), 1, fpWt);
 	}
 
@@ -163,7 +168,7 @@ int main(){
     fclose(fpRd);
     fclose(fpWt);
 
-	PlaySound(TEXT(cut), NULL, SND_ASYNC);
+	PlaySound(TEXT(cut), NULL, SND_FILENAME | SND_ASYNC);
 
 	printf(" subchunk2 ID: ");
     p4(wavDat.SubChunk2Id);
