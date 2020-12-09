@@ -23,9 +23,11 @@ typedef struct{
 	uint32_t SubChunk2Size;
 }data_t;
 
-/*typedef struct{
+typedef struct{
 	uint32_t SubChunk2Size;
-}list_t;*/
+	char *ListTypeID;
+	char SubChunk3ID[4];
+}list_t;
 
 int tabul (int t){ //função para tabulações
 	int i;
@@ -63,6 +65,7 @@ int main(){
     char id[5] = "    \0";
     int i;
     char *p;
+    char temp[5] = "    \0";
     int segundosComeco;
     int segundosDuracao;
     int numBytesPular;
@@ -70,6 +73,7 @@ int main(){
 
     cabecalho_t wavCab;
     data_t wavDat;
+    list_t info;
     int16_t data, volume;
 
     setlocale(LC_ALL, "");
@@ -102,9 +106,34 @@ int main(){
 	}
 
 	/*data format*/
-
-    fread ((void *)&wavDat, sizeof(wavDat), 1, fpRd);
-
+	
+	if(!strcmp(id, "data")){
+		fread ((void *)&wavDat, sizeof(wavDat), 1, fpRd);
+		
+		fseek (fpRd, wavDat.SubChunk2Size, SEEK_CUR);	
+			
+		for(p=temp; *p!='\0'; p++){
+        	fread((void *)p, 1, 1, fpRd);
+		}
+		
+		if(!strcmp(temp, "LIST")){
+			strcpy(id, temp);
+			fread((void *)&info.SubChunk2Size, sizeof(info.SubChunk2Size), 1, fpRd);
+			info.ListTypeID = (char *) malloc(sizeof(char)*info.SubChunk2Size);
+			fread((void *)info.ListTypeID, info.SubChunk2Size, 1, fpRd);
+			fseek (fpRd, -(wavDat.SubChunk2Size+info.SubChunk2Size+sizeof(info.SubChunk2Size)), SEEK_CUR);
+			memcpy(info.SubChunk3ID, "data", 4);
+		}else{
+			fseek (fpRd, -4, SEEK_CUR);
+		}
+	}else if(!strcmp(id, "LIST")){
+		fread((void *)&info.SubChunk2Size, sizeof(info.SubChunk2Size), 1, fpRd);
+		info.ListTypeID = (char *) malloc(sizeof(char)*info.SubChunk2Size);
+		fread((void *)info.ListTypeID, info.SubChunk2Size, 1, fpRd);
+		fread((void *)&info.SubChunk3ID, sizeof(info.SubChunk3ID), 1, fpRd);
+		fread ((void *)&wavDat, sizeof(wavDat), 1, fpRd);
+	}
+	
 	printf(" ID : ");
     p4(wavCab.ChunkID);
 
@@ -151,10 +180,22 @@ int main(){
     printf(" bits per sample: %d", wavCab.BitsPerSample);
 
     nl(2);
+    
+    if(!strcmp(id, "LIST")){
+		printf(" LIST subchunk2 size: %d", info.SubChunk2Size);
+		nl(1);
+		printf(" list type id: ");
+		p4(info.ListTypeID);
+		nl(1);
+		for(i=4; i<info.SubChunk2Size; i++){
+			printf("%c", *(info.ListTypeID+i));
+		}
+		nl(1);
+	}
 
 	printf(" subchunk2 ID: ");
-    p4(id);
-
+	p4(id);
+	
     nl(1);
 
 	printf(" subchunk2 Size: %d", wavDat.SubChunk2Size);
@@ -187,15 +228,21 @@ int main(){
     fpWt = fopen(cut, "wb");
 
     fwrite((void *)&wavCab, sizeof(wavCab), 1, fpWt);
-    fwrite((void *)id, 4, 1, fpWt);
+    fwrite((void *)"data", 4, 1, fpWt);
 	fwrite((void *)&wavDat, sizeof(wavDat), 1, fpWt);
-
+	
     fseek(fpRd, numBytesPular, SEEK_CUR);
 
 	for(i=0; i<numSamplesLer; i++){
 		fread ((void *)&data, sizeof(int16_t), 1, fpRd);
-        data = data/volume;
-		fwrite ((void *)&data, sizeof(int16_t), 1, fpWt);
+    	data = data/volume;
+		fwrite ((void *)&data, sizeof(int16_t), 1, fpWt);	
+	}
+
+	if(!strcmp(id, "LIST")){
+		fwrite ((void *)id, 4, 1, fpWt);
+		fwrite((void *)&info.SubChunk2Size, sizeof(info.SubChunk2Size), 1, fpWt);
+		fwrite((void *)info.ListTypeID, info.SubChunk2Size, 1, fpWt);
 	}
 
 	fclose(fpRd);
