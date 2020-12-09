@@ -58,6 +58,10 @@ int main(){
     FILE *fpRd, *fpWt;
     char nome[300], cut[300];
     int i;
+    int segundosComeco;
+    int segundosDuracao;
+    int numBytesPular;
+    int numSamplesLer;
 
     strcpy(cut, "cut_");
 
@@ -91,6 +95,14 @@ int main(){
 
 	printf(" digite o quanto deseja diminuir ou aumentar o áudio: ");
     scanf("%d", &volume);
+
+    nl(1);
+
+    printf(" digite em quantos segundos quer o começo do corte: ");
+    scanf("%d", &segundosComeco);
+
+	printf(" digite em quantos segundos quer o final do corte: ");
+	scanf("%d", &segundosDuracao);
 
 	nl(1);
 
@@ -144,18 +156,14 @@ int main(){
 
     nl(2);
 
-
-    int segundosComeco = 2;
-    int segundosDuracao = 2;
-
-    int numBytesPular = (int)((double)(segundosComeco*(wavCab.BitsPerSample/8))/((double)16*pow((double)10, (double)-6)));
-    int numSamplesLer = (int)((double)(segundosDuracao)/((double)16*pow((double)10, (double)-6)));
+    numBytesPular = segundosComeco*wavCab.SampleRate*wavCab.BitsPerSample/8;
+    numSamplesLer = segundosDuracao*wavCab.SampleRate;
 
     wavDat.SubChunk2Size = numSamplesLer * (wavCab.BitsPerSample/8);
     wavCab.ChunkSize = wavDat.SubChunk2Size + 36;
 
     fwrite ((void *)&wavCab, sizeof(wavCab), 1, fpWt);
-    fwrite((void *)&wavDat, sizeof(wavDat), 1, fpWt);
+	fwrite((void *)&wavDat, sizeof(wavDat), 1, fpWt);
 
     fseek(fpRd, numBytesPular, SEEK_CUR);
 
