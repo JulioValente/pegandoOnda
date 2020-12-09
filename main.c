@@ -95,12 +95,12 @@ int main(){
 
 	printf(" digite o quanto deseja diminuir ou aumentar o áudio: ");
     scanf("%d", &volume);
-
+    
     nl(1);
-
+    
     printf(" digite em quantos segundos quer o começo do corte: ");
     scanf("%d", &segundosComeco);
-
+    
 	printf(" digite em quantos segundos quer o final do corte: ");
 	scanf("%d", &segundosDuracao);
 
