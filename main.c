@@ -26,31 +26,31 @@ typedef struct{
 
 int tabul (int t){ //função para tabulações
 	int i;
-	
+
 	for(i=0; i<t; i++){
 		printf("\t");
 	}
 }
 
 int nl (int y){ //função para novas linhas
-	
+
 	int i;
-	
+
 	for(i=0; i<y; i++){
 		printf("\n");
 	}
 }
 
 void p4 (char *str){
-	
+
 	int i=4;
-	
+
 	while(i){
 		putchar(*str);
 		str++;
 		i--;
 	}
-	
+
 }
 
 int main(){
@@ -58,116 +58,122 @@ int main(){
     FILE *fpRd, *fpWt;
     char nome[300], cut[]={"cut_"};
     int i;
-  
+
     cabecalho_t wavCab;
     wave_t wavDat;
     int16_t data, volume;
-    
+
     setlocale(LC_ALL, "");
-    
+
     do{
 
-		printf(" escreva o nome do arquivo que desja abrir: ");    	
+		printf(" escreva o nome do arquivo que desja abrir: ");
 		scanf(" %s", &nome);
-		
+
 		nl(1);
-    
+
     	strcat(nome, ".wav");
-    
+
     	fpRd = fopen(nome, "rb");
-    	
+
     	if(!fpRd){
 			printf(" não foi possível abrir o arquivo! Arquivo não é do formato .wav ou não existe");
 			nl(2);
 		}else{
 			strcat(cut, nome);
-    	
+
     		fpWt = fopen(cut, "wb");
 		}
-			
+
 	}while(!fpRd);
-	
+
 	printf(" digite o quanto deseja diminuir ou aumentar o áudio: ");
     scanf("%d", &volume);
-	
+
 	nl(1);
-	
+
 	fread ((void *)&wavCab, sizeof(wavCab), 1, fpRd);
 	fread ((void *)&wavDat, sizeof(wavDat), 1, fpRd);
-	
+
 	printf(" ID : ");
     p4(wavCab.ChunkID);
-    
+
     nl(1);
-	
+
 	printf(" chunk size: %d", wavCab.ChunkSize);
-	
+
 	nl(1);
-    
+
     printf(" format: ");
     p4(wavCab.Format);
-    
+
     nl(1);
-    
+
     printf(" subchunk1 ID: ");
     p4(wavCab.SubChunkID);
-    
+
     nl(1);
-    
+
     printf(" subchunk1 Size: %d", wavCab.SubChunkSize);
-    
+
     nl(1);
-    
+
     printf(" Audio Format: %d", wavCab.AudioFormat);
-    
+
     nl(1);
-    
+
     printf(" num chanels: %d", wavCab.NumChannels);
-    
+
     nl(1);
-    
+
     printf(" Sample Rate: %d", wavCab.SampleRate);
-    
+
     nl(1);
-    
+
     printf(" byte rate: %d", wavCab.ByteRate);
-    
+
     nl(1);
-    
+
     printf(" block align: %d", wavCab.BlockAlign);
-    
+
     nl(1);
-    
+
     printf(" bits per sample: %d", wavCab.BytesPerSample);
-    
+
     nl(2);
-    
+
     fwrite ((void *)&wavCab, sizeof(wavCab), 1, fpWt);
     fwrite ((void *)&wavDat, sizeof(wavDat), 1, fpWt);
-	
-	
-	for(i=0; i<wavDat.SubChunk2Size/2; i++){
+
+    int segundosComeco = 2;
+    int segundosDuracao = 2;
+
+    int numBytesPular = (int)((double)(segundosComeco*wavCab.BytesPerSample)/((double)16*pow((double)10, (double)-6)));
+    int numSamplesLer = (int)((double)(segundosDuracao)/((double)16*pow((double)10, (double)-6)));
+
+    fseek(fpRd, numBytesPular, SEEK_CUR);
+
+	for(i=0; i<numSamplesLer; i++){
 		fread ((void *)&data, sizeof(int16_t), 1, fpRd);
 			data = data/volume;
-		fwrite ((void *)&data, sizeof(int16_t), 1, fpWt);	
+		fwrite ((void *)&data, sizeof(int16_t), 1, fpWt);
 	}
-    
-    fseek(fpRd, 700, 2);
-    
+
+
     fclose(fpRd);
     fclose(fpWt);
-	
+
 	PlaySound(TEXT(cut), NULL, SND_ASYNC);
-    
+
 	printf(" subchunk2 ID: ");
     p4(wavDat.SubChunk2Id);
-    
+
     nl(1);
-	
+
 	printf(" subchunk2 Size: %d", wavDat.SubChunk2Size);
-    
+
     nl(2);
-    
+
 	printf(" aperta uma tecla aí jão");
 
     getch();
