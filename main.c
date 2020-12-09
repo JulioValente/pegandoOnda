@@ -20,9 +20,12 @@ typedef struct{
 }cabecalho_t;
 
 typedef struct{
-	char SubChunk2Id[4];
 	uint32_t SubChunk2Size;
-}wave_t;
+}data_t;
+
+/*typedef struct{
+	uint32_t SubChunk2Size;
+}list_t;*/
 
 int tabul (int t){ //função para tabulações
 	int i;
@@ -57,19 +60,21 @@ int main(){
 
     FILE *fpRd, *fpWt;
     char nome[300], cut[300];
+    char id[5] = "    \0";
     int i;
+    char *p;
     int segundosComeco;
     int segundosDuracao;
     int numBytesPular;
     int numSamplesLer;
 
-    strcpy(cut, "cut_");
-
     cabecalho_t wavCab;
-    wave_t wavDat;
+    data_t wavDat;
     int16_t data, volume;
 
     setlocale(LC_ALL, "");
+
+    strcpy(cut, "cut_");
 
     do{
 
@@ -89,7 +94,16 @@ int main(){
 	}while(!fpRd);
 
 	fread ((void *)&wavCab, sizeof(wavCab), 1, fpRd);
-	fread ((void *)&wavDat, sizeof(wavDat), 1, fpRd);
+
+	/*data format*/
+
+	for(p=id; *p!='\0'; p++){
+        fread((void *)p, 1, 1, fpRd);
+	}
+
+	/*data format*/
+
+    fread ((void *)&wavDat, sizeof(wavDat), 1, fpRd);
 
 	printf(" ID : ");
     p4(wavCab.ChunkID);
@@ -139,7 +153,7 @@ int main(){
     nl(2);
 
 	printf(" subchunk2 ID: ");
-    p4(wavDat.SubChunk2Id);
+    p4(id);
 
     nl(1);
 
@@ -173,6 +187,7 @@ int main(){
     fpWt = fopen(cut, "wb");
 
     fwrite((void *)&wavCab, sizeof(wavCab), 1, fpWt);
+    fwrite((void *)id, 4, 1, fpWt);
 	fwrite((void *)&wavDat, sizeof(wavDat), 1, fpWt);
 
     fseek(fpRd, numBytesPular, SEEK_CUR);
