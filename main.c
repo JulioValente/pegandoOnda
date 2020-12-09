@@ -85,26 +85,8 @@ int main(){
     	if(!fpRd){
 			printf(" não foi possível abrir o arquivo! Arquivo não é do formato .wav ou não existe");
 			nl(2);
-		}else{
-			strcat(cut, nome);
-
-    		fpWt = fopen(cut, "wb");
 		}
-
 	}while(!fpRd);
-
-	printf(" digite o quanto deseja diminuir ou aumentar o áudio: ");
-    scanf("%d", &volume);
-    
-    nl(1);
-    
-    printf(" digite em quantos segundos quer o começo do corte: ");
-    scanf("%d", &segundosComeco);
-    
-	printf(" digite em quantos segundos quer o final do corte: ");
-	scanf("%d", &segundosDuracao);
-
-	nl(1);
 
 	fread ((void *)&wavCab, sizeof(wavCab), 1, fpRd);
 	fread ((void *)&wavDat, sizeof(wavDat), 1, fpRd);
@@ -156,13 +138,41 @@ int main(){
 
     nl(2);
 
+	printf(" subchunk2 ID: ");
+    p4(wavDat.SubChunk2Id);
+
+    nl(1);
+
+	printf(" subchunk2 Size: %d", wavDat.SubChunk2Size);
+
+    nl(2);
+
+	printf(" digite o quanto deseja diminuir ou aumentar o áudio: ");
+    scanf("%d", &volume);
+
+    nl(1);
+
+    printf(" digite em quantos segundos quer o começo do corte: ");
+    scanf("%d", &segundosComeco);
+
+	printf(" digite em quantos segundos quer de duração do corte: ");
+	scanf("%d", &segundosDuracao);
+
+	nl(1);
+
+	printf(" aperta uma tecla aí jão");
+
     numBytesPular = segundosComeco*wavCab.SampleRate*wavCab.BitsPerSample/8;
     numSamplesLer = segundosDuracao*wavCab.SampleRate;
 
     wavDat.SubChunk2Size = numSamplesLer * (wavCab.BitsPerSample/8);
     wavCab.ChunkSize = wavDat.SubChunk2Size + 36;
 
-    fwrite ((void *)&wavCab, sizeof(wavCab), 1, fpWt);
+    strcat(cut, nome);
+
+    fpWt = fopen(cut, "wb");
+
+    fwrite((void *)&wavCab, sizeof(wavCab), 1, fpWt);
 	fwrite((void *)&wavDat, sizeof(wavDat), 1, fpWt);
 
     fseek(fpRd, numBytesPular, SEEK_CUR);
@@ -173,22 +183,10 @@ int main(){
 		fwrite ((void *)&data, sizeof(int16_t), 1, fpWt);
 	}
 
-
-    fclose(fpRd);
+	fclose(fpRd);
     fclose(fpWt);
 
 	PlaySound(TEXT(cut), NULL, SND_FILENAME | SND_ASYNC);
-
-	printf(" subchunk2 ID: ");
-    p4(wavDat.SubChunk2Id);
-
-    nl(1);
-
-	printf(" subchunk2 Size: %d", wavDat.SubChunk2Size);
-
-    nl(2);
-
-	printf(" aperta uma tecla aí jão");
 
     getch();
     return 0;
