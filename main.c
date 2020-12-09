@@ -144,7 +144,6 @@ int main(){
 
     nl(2);
 
-    fwrite ((void *)&wavCab, sizeof(wavCab), 1, fpWt);
 
     int segundosComeco = 2;
     int segundosDuracao = 2;
@@ -153,7 +152,9 @@ int main(){
     int numSamplesLer = (int)((double)(segundosDuracao)/((double)16*pow((double)10, (double)-6)));
 
     wavDat.SubChunk2Size = numSamplesLer * (wavCab.BitsPerSample/8);
+    wavCab.ChunkSize = wavDat.SubChunk2Size + 36;
 
+    fwrite ((void *)&wavCab, sizeof(wavCab), 1, fpWt);
     fwrite((void *)&wavDat, sizeof(wavDat), 1, fpWt);
 
     fseek(fpRd, numBytesPular, SEEK_CUR);
