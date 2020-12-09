@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
-#include <mmsystem.h>
 #include <locale.h>
 #include <math.h>
 #include <stdint.h>
@@ -18,14 +17,11 @@ typedef struct{
     	uint32_t ByteRate;
 		uint16_t BlockAlign;
 		uint16_t BytesPerSample;
-		char SubChunk2Id[4];
-		uint32_t SubChunk2Size;
 }cabecalho_t;
 
 typedef struct{
-	uint32_t SubChunk2Size;
 	char SubChunk2Id[4];
-	int met;
+	uint32_t SubChunk2Size;
 }wave_t;
 
 int tabul (int t){ //função para tabulações
@@ -62,9 +58,10 @@ int main(){
     FILE *fpRd, *fpWt;
     char nome[300], cut[]={"cut_"};
     int i;
-    
-    cabecalho_t wavCab, wavDat;
-    int16_t data;
+  
+    cabecalho_t wavCab;
+    wave_t wavDat;
+    int16_t data, volume;
     
     setlocale(LC_ALL, "");
     
@@ -90,7 +87,13 @@ int main(){
 			
 	}while(!fpRd);
 	
+	printf(" digite o quanto deseja diminuir ou aumentar o áudio: ");
+    scanf("%d", &volume);
+	
+	nl(1);
+	
 	fread ((void *)&wavCab, sizeof(wavCab), 1, fpRd);
+	fread ((void *)&wavDat, sizeof(wavDat), 1, fpRd);
 	
 	printf(" ID : ");
     p4(wavCab.ChunkID);
@@ -140,28 +143,31 @@ int main(){
     nl(2);
     
     fwrite ((void *)&wavCab, sizeof(wavCab), 1, fpWt);
-
+    fwrite ((void *)&wavDat, sizeof(wavDat), 1, fpWt);
+	
+	
 	for(i=0; i<wavDat.SubChunk2Size/2; i++){
 		fread ((void *)&data, sizeof(int16_t), 1, fpRd);
-			data = data/10;
+			data = data/volume;
 		fwrite ((void *)&data, sizeof(int16_t), 1, fpWt);	
 	}
     
+    fseek(fpRd, 700, 2);
+    
+    fclose(fpRd);
+    fclose(fpWt);
+	
+	PlaySound(TEXT(cut), NULL, SND_ASYNC);
+    
 	printf(" subchunk2 ID: ");
-    p4(wavCab.SubChunk2Id);
+    p4(wavDat.SubChunk2Id);
     
     nl(1);
 	
-	printf(" subchunk2 Size: %d", wavCab.SubChunk2Size);
+	printf(" subchunk2 Size: %d", wavDat.SubChunk2Size);
     
     nl(2);
-    	
-    fclose(fpRd);
-    fclose(fpWt);
     
-	PlaySound(TEXT(cut), NULL, SND_ASYNC);
-    
-
 	printf(" aperta uma tecla aí jão");
 
     getch();
