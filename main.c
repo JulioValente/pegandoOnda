@@ -159,8 +159,8 @@ int main(){
     fclose(fpRd);
     fclose(fpWt);
     
-	//PlaySound(TEXT("megalovania.wav"), NULL, SND_ASYNC);
-    //PlaySound("C:\Users\Marcelo\Desktop\os trabaio\zucco\pegandoOnda-master\megalovania.wav", NULL, SND_SYNC);
+	PlaySound(TEXT(cut), NULL, SND_ASYNC);
+    
 
 	printf(" aperta uma tecla aí jão");
 
