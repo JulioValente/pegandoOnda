@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+#include <mmsystem.h>
 #include <locale.h>
 #include <math.h>
 #include <stdint.h>
@@ -17,40 +18,43 @@ typedef struct{
     	uint32_t ByteRate;
 		uint16_t BlockAlign;
 		uint16_t BytesPerSample;
-}wavheader_t;
+		char SubChunk2Id[4];
+		uint32_t SubChunk2Size;
+}cabecalho_t;
 
 typedef struct{
+	uint32_t SubChunk2Size;
 	char SubChunk2Id[4];
-	UINT SubChunk2Size;
+	int met;
 }wave_t;
 
 int tabul (int t){ //função para tabulações
 	int i;
-
+	
 	for(i=0; i<t; i++){
 		printf("\t");
 	}
 }
 
 int nl (int y){ //função para novas linhas
-
+	
 	int i;
-
+	
 	for(i=0; i<y; i++){
 		printf("\n");
 	}
 }
 
 void p4 (char *str){
-
+	
 	int i=4;
-
+	
 	while(i){
 		putchar(*str);
 		str++;
 		i--;
 	}
-
+	
 }
 
 int main(){
@@ -58,102 +62,103 @@ int main(){
     FILE *fpRd, *fpWt;
     char nome[300], cut[]={"cut_"};
     int i;
-
-    wavheader_t wHead;
-    wave_t data;
-
-
+    
+    cabecalho_t wavCab, wavDat;
+    int16_t data;
+    
     setlocale(LC_ALL, "");
-
+    
     do{
 
-		printf(" escreva o nome do arquivo que desja abrir: ");
+		printf(" escreva o nome do arquivo que desja abrir: ");    	
 		scanf(" %s", &nome);
-
+		
 		nl(1);
-
+    
     	strcat(nome, ".wav");
-
+    
     	fpRd = fopen(nome, "rb");
-
-    	strcat(cut, nome);
-
-    	fpWt = fopen(cut, "w+b");
-
+    	
     	if(!fpRd){
 			printf(" não foi possível abrir o arquivo! Arquivo não é do formato .wav ou não existe");
 			nl(2);
+		}else{
+			strcat(cut, nome);
+    	
+    		fpWt = fopen(cut, "wb");
 		}
-
+			
 	}while(!fpRd);
-
-	fread ((void *)&wHead, sizeof(wHead), 1, fpRd);
-	fread ((void *)&data, sizeof(data), 1, fpRd);
-
-	/*for(i=0; i<data.SubChunk2Size; i++){
-		fread ((void *)&data, sizeof(data.SubChunk2Size), 1, fpRd);
-		fwrite ((void *)&data, sizeof(data.SubChunk2Size), 1, fpWt);
-	}*/
-
-    printf(" ID : ");
-    p4(wHead.ChunkID);
-
+	
+	fread ((void *)&wavCab, sizeof(wavCab), 1, fpRd);
+	
+	printf(" ID : ");
+    p4(wavCab.ChunkID);
+    
     nl(1);
-
-	printf(" chunk size: %d", wHead.ChunkSize);
-
+	
+	printf(" chunk size: %d", wavCab.ChunkSize);
+	
 	nl(1);
-
+    
     printf(" format: ");
-    p4(wHead.Format);
-
+    p4(wavCab.Format);
+    
     nl(1);
-
+    
     printf(" subchunk1 ID: ");
-    p4(wHead.SubChunkID);
-
+    p4(wavCab.SubChunkID);
+    
     nl(1);
-
-    printf(" subchunk1 Size: %d", wHead.SubChunkSize);
-
+    
+    printf(" subchunk1 Size: %d", wavCab.SubChunkSize);
+    
     nl(1);
-
-    printf(" Audio Format: %d", wHead.AudioFormat);
-
+    
+    printf(" Audio Format: %d", wavCab.AudioFormat);
+    
     nl(1);
-
-    printf(" num chanels: %d", wHead.NumChannels);
-
+    
+    printf(" num chanels: %d", wavCab.NumChannels);
+    
     nl(1);
-
-    printf(" Sample Rate: %d", wHead.SampleRate);
-
+    
+    printf(" Sample Rate: %d", wavCab.SampleRate);
+    
     nl(1);
-
-    printf(" byte rate: %d", wHead.ByteRate);
-
+    
+    printf(" byte rate: %d", wavCab.ByteRate);
+    
     nl(1);
-
-    printf(" block align: %d", wHead.BlockAlign);
-
+    
+    printf(" block align: %d", wavCab.BlockAlign);
+    
     nl(1);
-
-    printf(" bits per sample: %d", wHead.BytesPerSample);
-
+    
+    printf(" bits per sample: %d", wavCab.BytesPerSample);
+    
     nl(2);
+    
+    fwrite ((void *)&wavCab, sizeof(wavCab), 1, fpWt);
 
-    printf(" subchunk2 ID: ");
-    p4(data.SubChunk2Id);
-
+	for(i=0; i<wavDat.SubChunk2Size/2; i++){
+		fread ((void *)&data, sizeof(int16_t), 1, fpRd);
+			data = data/10;
+		fwrite ((void *)&data, sizeof(int16_t), 1, fpWt);	
+	}
+    
+	printf(" subchunk2 ID: ");
+    p4(wavCab.SubChunk2Id);
+    
     nl(1);
-
-	printf(" subchunk2 Size: %d", data.SubChunk2Size);
-
+	
+	printf(" subchunk2 Size: %d", wavCab.SubChunk2Size);
+    
     nl(2);
-
+    	
     fclose(fpRd);
     fclose(fpWt);
-
+    
 	//PlaySound(TEXT("megalovania.wav"), NULL, SND_ASYNC);
     //PlaySound("C:\Users\Marcelo\Desktop\os trabaio\zucco\pegandoOnda-master\megalovania.wav", NULL, SND_SYNC);
 
