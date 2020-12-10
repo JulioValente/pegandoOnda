@@ -80,6 +80,76 @@ void p4 (char *str){
 
 }
 
+void recebeList(void *dest, char *list, int *p, int bytes){ //lê uma certa quantidade de bytes do LIST na posição do ponteiro e atualiza o ponteiro
+    memcpy(dest, (void *)(list + *p), bytes);
+    *p+=bytes;
+}
+
+void escreveList(list_t list){ //escreve as informações do LIST
+    int textPointer = 0;    //posição atual de leitura do list
+    uint32_t textSize;      //tamanho do texto sucessor do id
+    char id[] = "    \0";   //id
+    char *text;             //string do texto sucessor do id
+
+    recebeList((void *)id, list.ListTypeID, &textPointer, 4);   //lê o id
+    if(!strcmp(id, "INFO")){
+        while(textPointer < list.SubChunk2Size){
+            recebeList((void *)id, list.ListTypeID, &textPointer, 4);           //lê o info id
+            recebeList((void *)&textSize, list.ListTypeID, &textPointer, 4);    //lê o tamanho do texto
+
+            text = (char *)malloc(sizeof(char)*textSize);                       //aloca memória para a string do texto
+            recebeList((void *)text, list.ListTypeID, &textPointer, textSize);  //recebe o texto
+
+            /*imprime as informações*/
+            if(!strcmp(id, "IART")){
+                printf(" Nome do artista: %s", text);
+            }else if(!strcmp(id, "ICRD")){
+                printf(" Data de criação: %s", text);
+            }else if(!strcmp(id, "IGNR")){
+                printf(" Gênero: %s", text);
+            }else if(!strcmp(id, "INAM")){
+                printf(" Título: %s", text);
+            }else if(!strcmp(id, "ICMT")){
+                printf(" ComentárioS: %s", text);
+            }else if(!strcmp(id, "ICOP")){
+                printf(" Copyright: %s", text);
+            }else if(!strcmp(id, "ITRK")){
+                printf(" Número da faixa: %s", text);
+            }else if(!strcmp(id, "IPRD")){
+                printf(" Album: %s", text);
+            }else if(!strcmp(id, "ISFT")){
+                printf(" Software: %s", text);
+            }else if(!strcmp(id, "IARL")){
+                printf(" Local do arquivo: %s", text);
+            }else if(!strcmp(id, "ICMS")){
+                printf(" Comissão: %s", text);
+            }else if(!strcmp(id, "IENG")){
+                printf(" Engenheiro: %s", text);
+            }else if(!strcmp(id, "IKEY")){
+                printf(" Palavras chaves: %s", text);
+            }else if(!strcmp(id, "IMED")){
+                printf(" Mídia: %s", text);
+            }else if(!strcmp(id, "ISBJ")){
+                printf(" Descrição do arquivo: %s", text);
+            }else if(!strcmp(id, "ITCH")){
+                printf(" Técnico: %s", text);
+            }else if(!strcmp(id, "ISRC")){
+                printf(" Fonte: %s", text);
+            }else if(!strcmp(id, "ISRF")){
+                printf(" Formato da fonte: %s", text);
+            }else{
+                printf(" %s: %s", id, text);
+            }
+
+            nl(1);
+        }
+    }else{
+		for(; textPointer<list.SubChunk2Size; textPointer++){
+			printf("%c", *(list.ListTypeID+textPointer));
+		}
+    }
+}
+
 /*programa principal*/
 int main(){
 
@@ -221,12 +291,18 @@ int main(){
 		nl(1);
 		printf(" list type id: ");
 		p4(info.ListTypeID);
-		nl(1);
+
+		/*nl(1);
 		for(i=4; i<info.SubChunk2Size; i++){
 			printf("%c", *(info.ListTypeID+i));
 		}
+		nl(2);*/
+
 		nl(2);
+		escreveList(info);
 	}
+
+    nl(1);
 
 	/*mostrando os dados do arquivo*/
 
