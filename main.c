@@ -166,6 +166,7 @@ int main(){
     int numBytesPular;		  //define a quantidade de bytes que srão lidos
     int numSamplesLer;		  //define a quantidade de samples que srão lidas
 	float volume;			  //variável para ajustar os valore de volume
+	int novoData;             //data vezes o volume
 
     cabecalho_t wavCab;		  //variável para o cabeçalho
     data_t wavDat;			  //variável para os valores do data
@@ -309,17 +310,16 @@ int main(){
 	printf(" DATA subchunk2 Size: %d", wavDat.SubChunk2Size);
 
     nl(2);
-
 	/*coletando as alterações a ser feitas no arquivo de áudio*/
 
 	printf(" digite o quanto deseja diminuir ou aumentar o áudio (negativo para baixar e positivo para aumentar): ");
     scanf("%f", &volume);
 
 	if(volume > 0){
-		if(volume > 1.5){
-			volume = 1.5;
+		if(volume > 2){
+			volume = 2;
 			nl(2);
-			printf(" volume reduzido para 1,5 para não causar extremo desconforto!!!");
+			printf(" volume reduzido para 2 para não causar extremo desconforto!!!");
 			nl(2);
 		}else{
 			volume = volume;
@@ -364,7 +364,16 @@ int main(){
 	/*alterando o volume*/
 	for(i=0; i<numSamplesLer; i++){
 		fread ((void *)&data, sizeof(int16_t), 1, fpRd);
-    	data = data*volume;
+
+		//verifica se o data vezes o volume ultrapassa os valores máximos do data
+		novoData = data*volume;
+		if(novoData > 0x7FFF){
+            data = 0x7FFF;
+		}else if (novoData < -0x8000){
+            data = -0x8000;
+		}else{
+            data = novoData;
+		}
 		fwrite ((void *)&data, sizeof(int16_t), 1, fpWt);
 	}
 
