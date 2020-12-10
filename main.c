@@ -6,22 +6,22 @@
 #include <stdint.h>
 
 char abertura(){
-	
+
 	printf("*================================================================================================================*");
 	printf("\n\t\t\tPegando Onda - editor de arquivo wave");
 	nl(2);
 	printf(" autores: Júlio César e Mateus Rocha. \t\t\t\t\t turma: 4323");
 	printf("\n*================================================================================================================*");
 	printf("\n\n");
-	
+
 	printf(" reduz ou aumenta o volume do áudio, valores para volume com valor positivo aumenta e negativo diminui");
 	nl(2);
 	printf(" corta o arquvo do ponto que o usuário selecionar até o tempo de duração escolhido");
 	nl(1);
 	printf(" =======================================================================================================");
-	
+
 	nl(2);
-	
+
 }
 
 /*cabeçalho do arquivo wave*/
@@ -48,7 +48,6 @@ typedef struct{
 typedef struct{
 	uint32_t SubChunk2Size;
 	char *ListTypeID;	//as informações do arquivo escritas em formato de string
-	char SubChunk3ID[4];
 }list_t;
 
 int tabul (int t){ //função para tabulações
@@ -87,7 +86,8 @@ int main(){
 	/*declarando variáveis*/
     FILE *fpRd, *fpWt; 		  //fpRd = arquivo lido, fpWt = arquivo criado e modificado
     char nome[300], cut[300]; //nome = variável de entrada, cut = onde estará o "cut_"
-    char id[5] = "    \0"; 	  //vetor para pegar as ID's
+    char id[5] = "    \0"; 	  //vetor para pegar o ID do sub-chunk lido após o sub-chunk fmt
+    int temList = 0;          //variável que verifica se o arquivo tem o sub-chunk LIST
     int i; 					  //contador
     char *p; 				  //ponteiro para a variável temporária
     char temp[5] = "    \0";  //variável temporária
@@ -96,17 +96,17 @@ int main(){
     int numBytesPular;		  //define a quantidade de bytes que srão lidos
     int numSamplesLer;		  //define a quantidade de samples que srão lidas
 	float volume;			  //variável para ajustar os valore de volume
-	
+
     cabecalho_t wavCab;		  //variável para o cabeçalho
     data_t wavDat;			  //variável para os valores do data
     list_t info;			  //variável para as informações do arquivo
     int16_t data;	 		  //bytes que serão ajustados na mudança de volume
 	/**/
-	
+
     setlocale(LC_ALL, "");
 
     strcpy(cut, "cut_");
-    
+
     abertura();
 
 	/*coletando o nome e abrindo o arquivo para leitura*/
@@ -133,38 +133,40 @@ int main(){
 
 	for(p=id; *p!='\0'; p++){
         fread((void *)p, 1, 1, fpRd);
+        *p = tolower(*p);
 	}
 
 	/*data format*/
-	
+
 	/*coletando as informações do arquivo*/
-	if(!strcmp(id, "data")){
-		fread ((void *)&wavDat, sizeof(wavDat), 1, fpRd); //lendo os dados do arquivo
-		
-		fseek (fpRd, wavDat.SubChunk2Size, SEEK_CUR); //percorrendo o arquivo	
-		
+	if(!strcmp(id, "data")){ //quando é encontrado o sub-chunk data após o sub-chunk fmt
+		fread ((void *)&wavDat, sizeof(wavDat), 1, fpRd); //le o tamanho do data
+
+		fseek (fpRd, wavDat.SubChunk2Size, SEEK_CUR); //percorre o sub-chunk data
+
 		for(p=temp; *p!='\0'; p++){
         	fread((void *)p, 1, 1, fpRd); //lê quatro bytes e os coloca na variável temporária
+        	*p = tolower(*p);
 		}
-		
-		if(!strcmp(temp, "LIST")){ //quando é encontrado o LIST, ou seja, as informações do arquivo
-			strcpy(id, temp);
+
+		if(!strcmp(temp, "list")){ //quando é encontrado o sub-chunk LIST após o sub-chunk data
+			temList = 1;
 			fread((void *)&info.SubChunk2Size, sizeof(info.SubChunk2Size), 1, fpRd); 					   //quantidade de bytes das informações
 			info.ListTypeID = (char *) malloc(sizeof(char)*info.SubChunk2Size); 						   //definindo o tamanho do ListTypeID
 			fread((void *)info.ListTypeID, info.SubChunk2Size, 1, fpRd);								   //lendo as informações
 			fseek (fpRd, -(wavDat.SubChunk2Size+info.SubChunk2Size+sizeof(info.SubChunk2Size)), SEEK_CUR); //voltando para o começo do arquivo
-			memcpy(info.SubChunk3ID, "data", 4);														   //trocando o "LIST" por "data" para poder começar o áudio
 		}else{
-			fseek (fpRd, -4, SEEK_CUR); //voltando ao começo quando não é encontrado o "LIST"
+			fseek (fpRd, -4, SEEK_CUR); //voltando os 4 bytes lidos por temp caso não é encontrado o sub-chunk LIST
 		}
-	}else if(!strcmp(id, "LIST")){
-		fread((void *)&info.SubChunk2Size, sizeof(info.SubChunk2Size), 1, fpRd);
-		info.ListTypeID = (char *) malloc(sizeof(char)*info.SubChunk2Size);
-		fread((void *)info.ListTypeID, info.SubChunk2Size, 1, fpRd);
-		fread((void *)&info.SubChunk3ID, sizeof(info.SubChunk3ID), 1, fpRd);
-		fread ((void *)&wavDat, sizeof(wavDat), 1, fpRd);
+	}else if(!strcmp(id, "list")){ //quando é encontrado o sub-chunk LIST após o sub-chunk fmt
+	    temList = 1;
+		fread((void *)&info.SubChunk2Size, sizeof(info.SubChunk2Size), 1, fpRd);    //quantidade de bytes das informações
+		info.ListTypeID = (char *) malloc(sizeof(char)*info.SubChunk2Size);         //definindo o tamanho do ListTypeID
+		fread((void *)info.ListTypeID, info.SubChunk2Size, 1, fpRd);                //lendo as informações
+		fseek(fpRd, 4, SEEK_CUR);                                                   //pula a string "data"
+		fread ((void *)&wavDat, sizeof(wavDat), 1, fpRd);                           //le o tamanho do data
 	}
-	
+
 	/*mostrando o cabeçalho*/
 	printf(" ID : ");
     p4(wavCab.ChunkID);
@@ -212,9 +214,9 @@ int main(){
     printf(" bits per sample: %d", wavCab.BitsPerSample);
 
     nl(2);
-    
+
     /*mostrando as informações do arquivo de áudio*/
-    if(!strcmp(id, "LIST")){
+    if(temList){
 		printf(" LIST subchunk2 size: %d", info.SubChunk2Size);
 		nl(1);
 		printf(" list type id: ");
@@ -223,24 +225,20 @@ int main(){
 		for(i=4; i<info.SubChunk2Size; i++){
 			printf("%c", *(info.ListTypeID+i));
 		}
-		nl(1);
+		nl(2);
 	}
 
 	/*mostrando os dados do arquivo*/
-	printf(" subchunk2 ID: ");
-	p4(id);
-	
-    nl(1);
 
-	printf(" subchunk2 Size: %d", wavDat.SubChunk2Size);
+	printf(" DATA subchunk2 Size: %d", wavDat.SubChunk2Size);
 
     nl(2);
-    
+
 	/*coletando as alterações a ser feitas no arquivo de áudio*/
-	
-	printf(" digite o quanto deseja diminuir ou aumentar o áudio: ");
+
+	printf(" digite o quanto deseja diminuir ou aumentar o áudio (negativo para baixar e positivo para aumentar): ");
     scanf("%f", &volume);
-	
+
 	if(volume > 0){
 		if(volume > 1.5){
 			volume = 1.5;
@@ -254,7 +252,7 @@ int main(){
 		volume = (-1)*volume;
 		volume = 1/volume;
 	}
-	
+
     nl(1);
 
     printf(" digite em quantos segundos quer o começo do corte: ");
@@ -283,7 +281,7 @@ int main(){
     fwrite((void *)&wavCab, sizeof(wavCab), 1, fpWt);	//escrevendo o cabeçalho
     fwrite((void *)"data", 4, 1, fpWt); 				//colocando a string data e marcando o começo do arquivo
 	fwrite((void *)&wavDat, sizeof(wavDat), 1, fpWt);	//escrevendo os dados
-	
+
 	/*cortando o áudio*/
     fseek(fpRd, numBytesPular, SEEK_CUR);
 
@@ -291,12 +289,12 @@ int main(){
 	for(i=0; i<numSamplesLer; i++){
 		fread ((void *)&data, sizeof(int16_t), 1, fpRd);
     	data = data*volume;
-		fwrite ((void *)&data, sizeof(int16_t), 1, fpWt);	
+		fwrite ((void *)&data, sizeof(int16_t), 1, fpWt);
 	}
 
 	/*colocando as informações no arquivo novo*/
-	if(!strcmp(id, "LIST")){
-		fwrite ((void *)id, 4, 1, fpWt);
+	if(temList){
+		fwrite ((void *)"LIST", 4, 1, fpWt);
 		fwrite((void *)&info.SubChunk2Size, sizeof(info.SubChunk2Size), 1, fpWt);
 		fwrite((void *)info.ListTypeID, info.SubChunk2Size, 1, fpWt);
 	}
